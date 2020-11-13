@@ -21,27 +21,68 @@
 <script src="js/OrbitControls.js"></script>
 <script>
 
-    let scene, renderer, camera;
-    let model, clock;
-
     init();
 
     function init() {
 
-        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
-        camera.position.set(50, 500, 500);
-        camera.lookAt(0, 0, 0);
+        const camera = getCamera();
 
-        clock = new THREE.Clock();
+        const scene = getScene();
 
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xa0a0a0);
-        // scene.fog = new THREE.Fog(0xa0a0a0, 2000, 2000);
-
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.1);
-        hemiLight.position.set(0, 500, 500);
+        const hemiLight = getHemiLight();
         scene.add(hemiLight);
 
+        const dirLight = getDirLight();
+        scene.add(dirLight);
+
+        scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+
+        const ground = getGround();
+        scene.add(ground);
+
+        const sun = getSun();
+        scene.add(sun);
+
+        const renderer = getRenderer();
+        document.body.appendChild(renderer.domElement);
+
+        loadTreeAndStartRender(render, scene);
+
+        function render() {
+            requestAnimationFrame(render);
+
+            let sunCoords = getSunCoords();
+            dirLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+            hemiLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+            sun.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+
+            renderer.render(scene, camera);
+        }
+
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+
+    function getCamera() {
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
+        camera.position.set(50, 500, 500);
+        camera.lookAt(0, 0, 0);
+        return camera;
+    }
+
+    function getScene() {
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xa0a0a0);
+        // scene.fog = new THREE.Fog(0xa0a0a0, 2000, 2000);
+        return scene;
+    }
+
+    function getHemiLight() {
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.1);
+        hemiLight.position.set(0, 500, 500);
+        return hemiLight;
+    }
+
+    function getDirLight() {
         const dirLight = new THREE.DirectionalLight(0xffffff);
         dirLight.position.set(0, 500, 500);
         dirLight.castShadow = true;
@@ -51,64 +92,94 @@
         dirLight.shadow.camera.right = 500;
         dirLight.shadow.camera.near = 0.1;
         dirLight.shadow.camera.far = 2000;
-        scene.add(dirLight);
+        return dirLight;
+    }
 
-        scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
-
-        // ground
+    function getGround() {
         const textureLoader = new THREE.TextureLoader();
         const material = new THREE.MeshLambertMaterial({
             map: textureLoader.load('textures/snow_ground.png'),
         });
-        const mesh = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), material);
-        mesh.rotation.x = -Math.PI / 2;
-        mesh.position.set(0, -22.7, 0);
-        mesh.receiveShadow = true;
-        scene.add(mesh);
+        const ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), material);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.set(0, -22.7, 0);
+        ground.receiveShadow = true;
+        return ground;
+    }
 
+    function loadTreeAndStartRender(render, scene) {
         const loader = new THREE.GLTFLoader();
         loader.load('models/fur_tree/scene.gltf', function (gltf) {
 
-            model = gltf.scene;
-            scene.add(model);
+            let model = gltf.scene;
 
             model.castShadow = true;
+            model.receiveShadow = true;
             model.traverse(function (object) {
                 object.castShadow = true;
+                object.receiveShadow = true;
             });
 
+            scene.add(model);
+            model = model.clone();
+            model.position.z += 250;
+            scene.add(model);
+            model = model.clone();
+            model.position.x += 140;
+            scene.add(model);
+            model = model.clone();
+            model.position.z -= 180;
+            scene.add(model);
 
             render();
 
         });
+    }
 
-        renderer = new THREE.WebGLRenderer({antialias: true});
+    function getRenderer() {
+        const renderer = new THREE.WebGLRenderer({antialias: true});
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.shadowMap.enabled = true;
-        document.getElementsByTagName("body")[0].appendChild(renderer.domElement);
+        return renderer;
+    }
 
-        var clock = new THREE.Clock();
-        var angle = 0;
-        var angularSpeed = THREE.Math.degToRad(20);
-        var delta = 0;
-        var radius = 1000;
-        var direction = 1;
-
-        function render() {
-            requestAnimationFrame(render);
-
-            var delta = clock.getDelta();
-            dirLight.position.set(0, Math.cos(angle) * radius, Math.sin(angle) * radius);
-            hemiLight.position.set(0, Math.cos(angle) * radius, Math.sin(angle) * radius);
-            angle += angularSpeed * delta;
-            //x_light += 1 * direction;
-
-            renderer.render(scene, camera);
+    function getSunCoords() {
+        if (typeof getSunCoords.angle === 'undefined') {
+            getSunCoords.clock = new THREE.Clock();
+            getSunCoords.angle = 0;
+            getSunCoords.angularSpeed = THREE.Math.degToRad(20);
+            getSunCoords.delta = 0;
+            getSunCoords.radius = 1000;
+            getSunCoords.direction = 1;
         }
+        const delta = getSunCoords.clock.getDelta();
+        getSunCoords.angle += getSunCoords.angularSpeed * delta;
+        return {
+            x: 0,
+            y: Math.cos(getSunCoords.angle) * getSunCoords.radius,
+            z: Math.sin(getSunCoords.angle) * getSunCoords.radius
+        };
+    }
 
-        var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    function getSun() {
+        const geometry = new THREE.SphereGeometry(50, 32, 32);
+        // const material = new THREE.MeshBasicMaterial({color: 0xffff00});
+        // const material = new THREE.MeshPhongMaterial( {
+        //
+        //     color: 0xffff00,
+        //     specular: 0xffff00,
+        //     shininess: 1,
+        //     emissive: 0xffff00,
+        //
+        // } );
+        const textureLoader = new THREE.TextureLoader();
+        const material = new THREE.MeshBasicMaterial({
+            map: textureLoader.load('textures/sun.png'),
+        });
+
+        return new THREE.Mesh(geometry, material);
     }
 </script>
 </body>
