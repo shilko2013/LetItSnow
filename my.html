@@ -29,28 +29,28 @@
     function init() {
 
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
-        camera.position.set(1, 2, -3);
-        camera.lookAt(0, 1, 0);
+        camera.position.set(50, 500, 500);
+        camera.lookAt(0, 0, 0);
 
         clock = new THREE.Clock();
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xa0a0a0);
-        //scene.fog = new THREE.Fog(0xa0a0a0, 10, 500);
+        // scene.fog = new THREE.Fog(0xa0a0a0, 2000, 2000);
 
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.1);
-        hemiLight.position.set(0, 20, 0);
+        hemiLight.position.set(0, 500, 500);
         scene.add(hemiLight);
 
         const dirLight = new THREE.DirectionalLight(0xffffff);
-        dirLight.position.set(-3, 10, -10);
+        dirLight.position.set(0, 500, 500);
         dirLight.castShadow = true;
         dirLight.shadow.camera.top = 500;
         dirLight.shadow.camera.bottom = -500;
         dirLight.shadow.camera.left = -500;
         dirLight.shadow.camera.right = 500;
         dirLight.shadow.camera.near = 0.1;
-        dirLight.shadow.camera.far = 1000;
+        dirLight.shadow.camera.far = 2000;
         scene.add(dirLight);
 
         scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
@@ -89,8 +89,21 @@
         renderer.shadowMap.enabled = true;
         document.getElementsByTagName("body")[0].appendChild(renderer.domElement);
 
+        var clock = new THREE.Clock();
+        var angle = 0;
+        var angularSpeed = THREE.Math.degToRad(20);
+        var delta = 0;
+        var radius = 1000;
+        var direction = 1;
+
         function render() {
             requestAnimationFrame(render);
+
+            var delta = clock.getDelta();
+            dirLight.position.set(0, Math.cos(angle) * radius, Math.sin(angle) * radius);
+            hemiLight.position.set(0, Math.cos(angle) * radius, Math.sin(angle) * radius);
+            angle += angularSpeed * delta;
+            //x_light += 1 * direction;
 
             renderer.render(scene, camera);
         }
