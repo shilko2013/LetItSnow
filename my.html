@@ -29,19 +29,30 @@
 
         const scene = getScene();
 
-        const hemiLight = getHemiLight();
-        scene.add(hemiLight);
+        const sunHemiLight = getSunHemiLight();
+        scene.add(sunHemiLight);
 
-        const dirLight = getDirLight();
-        scene.add(dirLight);
+        const sunDirLight = getSunDirLight();
+        scene.add(sunDirLight);
 
-        scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+        const sun = getSun();
+        scene.add(sun);
+
+        scene.add(new THREE.CameraHelper(sunDirLight.shadow.camera));
 
         const ground = getGround();
         scene.add(ground);
 
-        const sun = getSun();
-        scene.add(sun);
+        const moonHemiLight = getMoonHemiLight();
+        scene.add(moonHemiLight);
+
+        const moonDirLight = getMoonDirLight();
+        scene.add(moonDirLight);
+
+        const moon = getMoon();
+        scene.add(moon);
+
+        scene.add(new THREE.CameraHelper(moonDirLight.shadow.camera));
 
         const renderer = getRenderer();
         document.body.appendChild(renderer.domElement);
@@ -51,12 +62,19 @@
         function render() {
             requestAnimationFrame(render);
 
-            let sunCoords = getSunCoords();
-            dirLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
-            hemiLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
-            sun.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+            animateSunAndMoon();
 
             renderer.render(scene, camera);
+        }
+
+        function animateSunAndMoon() {
+            let sunCoords = getSunCoords();
+            sunDirLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+            sunHemiLight.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+            sun.position.set(sunCoords.x, sunCoords.y, sunCoords.z);
+            moonDirLight.position.set(sunCoords.z, -sunCoords.y, sunCoords.x);
+            moonHemiLight.position.set(sunCoords.z, -sunCoords.y, sunCoords.x);
+            moon.position.set(sunCoords.z, -sunCoords.y, sunCoords.x);
         }
 
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -76,29 +94,49 @@
         return scene;
     }
 
-    function getHemiLight() {
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.1);
-        hemiLight.position.set(0, 500, 500);
-        return hemiLight;
+    function getSunHemiLight() {
+        const sunHemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.1);
+        sunHemiLight.position.set(0, 500, 500);
+        return sunHemiLight;
     }
 
-    function getDirLight() {
-        const dirLight = new THREE.DirectionalLight(0xffffff);
-        dirLight.position.set(0, 500, 500);
-        dirLight.castShadow = true;
-        dirLight.shadow.camera.top = 500;
-        dirLight.shadow.camera.bottom = -500;
-        dirLight.shadow.camera.left = -500;
-        dirLight.shadow.camera.right = 500;
-        dirLight.shadow.camera.near = 0.1;
-        dirLight.shadow.camera.far = 2000;
-        return dirLight;
+    function getSunDirLight() {
+        const sunDirLight = new THREE.DirectionalLight(0xffffff);
+        sunDirLight.position.set(0, 500, 500);
+        sunDirLight.castShadow = true;
+        sunDirLight.shadow.camera.top = 500;
+        sunDirLight.shadow.camera.bottom = -500;
+        sunDirLight.shadow.camera.left = -500;
+        sunDirLight.shadow.camera.right = 500;
+        sunDirLight.shadow.camera.near = 0.1;
+        sunDirLight.shadow.camera.far = 2000;
+        return sunDirLight;
+    }
+
+    function getMoonHemiLight() {
+        const moonHemiLight = new THREE.HemisphereLight(0x4F6988, 0x444444, 0.1);
+        moonHemiLight.position.set(0, -500, 500);
+        return moonHemiLight;
+    }
+
+    function getMoonDirLight() {
+        const moonDirLight = new THREE.DirectionalLight(0x4F6988);
+        moonDirLight.position.set(0, -500, 500);
+        moonDirLight.castShadow = true;
+        moonDirLight.shadow.camera.top = 500;
+        moonDirLight.shadow.camera.bottom = -500;
+        moonDirLight.shadow.camera.left = -500;
+        moonDirLight.shadow.camera.right = 500;
+        moonDirLight.shadow.camera.near = 0.1;
+        moonDirLight.shadow.camera.far = 2000;
+        return moonDirLight;
     }
 
     function getGround() {
         const textureLoader = new THREE.TextureLoader();
+        const texture = textureLoader.load('textures/snow_ground.png');
         const material = new THREE.MeshLambertMaterial({
-            map: textureLoader.load('textures/snow_ground.png'),
+            map: texture,
         });
         const ground = new THREE.Mesh(new THREE.PlaneBufferGeometry(2000, 2000), material);
         ground.rotation.x = -Math.PI / 2;
@@ -177,6 +215,16 @@
         const textureLoader = new THREE.TextureLoader();
         const material = new THREE.MeshBasicMaterial({
             map: textureLoader.load('textures/sun.png'),
+        });
+
+        return new THREE.Mesh(geometry, material);
+    }
+
+    function getMoon() {
+        const geometry = new THREE.SphereGeometry(40, 32, 32);
+        const textureLoader = new THREE.TextureLoader();
+        const material = new THREE.MeshBasicMaterial({
+            map: textureLoader.load('textures/moon.png'),
         });
 
         return new THREE.Mesh(geometry, material);
