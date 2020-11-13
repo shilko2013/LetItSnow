@@ -38,7 +38,7 @@
         const sun = getSun();
         scene.add(sun);
 
-        scene.add(new THREE.CameraHelper(sunDirLight.shadow.camera));
+        // scene.add(new THREE.CameraHelper(sunDirLight.shadow.camera));
 
         const ground = getGround();
         scene.add(ground);
@@ -52,10 +52,13 @@
         const moon = getMoon();
         scene.add(moon);
 
-        scene.add(new THREE.CameraHelper(moonDirLight.shadow.camera));
+        // scene.add(new THREE.CameraHelper(moonDirLight.shadow.camera));
 
         const renderer = getRenderer();
         document.body.appendChild(renderer.domElement);
+
+        const particles = getParticles();
+        scene.add(particles);
 
         loadTreeAndStartRender(render, scene);
 
@@ -63,6 +66,7 @@
             requestAnimationFrame(render);
 
             animateSunAndMoon();
+            letItSnow(particles);
 
             renderer.render(scene, camera);
         }
@@ -81,7 +85,7 @@
     }
 
     function getCamera() {
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 5000);
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 10000);
         camera.position.set(50, 500, 500);
         camera.lookAt(0, 0, 0);
         return camera;
@@ -109,7 +113,7 @@
         sunDirLight.shadow.camera.left = -500;
         sunDirLight.shadow.camera.right = 500;
         sunDirLight.shadow.camera.near = 0.1;
-        sunDirLight.shadow.camera.far = 2000;
+        sunDirLight.shadow.camera.far = 8000;
         return sunDirLight;
     }
 
@@ -128,13 +132,13 @@
         moonDirLight.shadow.camera.left = -500;
         moonDirLight.shadow.camera.right = 500;
         moonDirLight.shadow.camera.near = 0.1;
-        moonDirLight.shadow.camera.far = 2000;
+        moonDirLight.shadow.camera.far = 8000;
         return moonDirLight;
     }
 
     function getGround() {
         const textureLoader = new THREE.TextureLoader();
-        const texture = textureLoader.load('textures/snow_ground.png');
+        const texture = textureLoader.load('textures/snow_ground2.jpg');
         const material = new THREE.MeshLambertMaterial({
             map: texture,
         });
@@ -187,9 +191,9 @@
         if (typeof getSunCoords.angle === 'undefined') {
             getSunCoords.clock = new THREE.Clock();
             getSunCoords.angle = 0;
-            getSunCoords.angularSpeed = THREE.Math.degToRad(20);
+            getSunCoords.angularSpeed = THREE.Math.degToRad(5);
             getSunCoords.delta = 0;
-            getSunCoords.radius = 1000;
+            getSunCoords.radius = 5000;
             getSunCoords.direction = 1;
         }
         const delta = getSunCoords.clock.getDelta();
@@ -228,6 +232,48 @@
         });
 
         return new THREE.Mesh(geometry, material);
+    }
+
+    function getParticles() {
+        const particleCount = 15000;
+        const loader = new THREE.TextureLoader();
+        const pMaterial = new THREE.PointsMaterial({
+            color: 0xFFFFFF,
+            size: 10,
+            map: loader.load(
+                "textures/snow.png"
+            ),
+            blending: THREE.AdditiveBlending,
+            depthTest: false,
+            transparent: true
+        });
+
+        const particles = new THREE.Geometry;
+        for (let i = 0; i < particleCount; i++) {
+            const pX = Math.random() * 2000 - 1000,
+                pY = Math.random() * 2000 - 1000 + 1000,
+                pZ = Math.random() * 2000 - 1000,
+                particle = new THREE.Vector3(pX, pY, pZ);
+            particle.velocity = {};
+            particle.velocity.y = 0;
+            particles.vertices.push(particle);
+        }
+        return new THREE.Points(particles, pMaterial);
+    }
+
+    function letItSnow(particles) {
+        // particles.rotation.y += 0.01;
+        let pCount = particles.geometry.vertices.length;
+        while (--pCount) {
+            const particle = particles.geometry.vertices[pCount];
+            if (particle.y < -30) {
+                particle.y = 1000;
+                particle.velocity.y = 0;
+            }
+            particle.velocity.y -= Math.random() * .02;
+            particle.y += particle.velocity.y;
+        }
+        particles.geometry.verticesNeedUpdate = true;
     }
 </script>
 </body>
