@@ -165,37 +165,29 @@
 
             let model = gltf.scene;
 
-            const _branchMesh = model.getObjectByName('pPlane145_Branch_0');
-            const _trunkMesh = model.getObjectByName('pPlane145_lambert5_0');
-            const branchGeometry = new THREE.InstancedBufferGeometry();
-            const trunkGeometry = new THREE.InstancedBufferGeometry();
-            THREE.BufferGeometry.prototype.copy.call(branchGeometry, _branchMesh.geometry);
-            THREE.BufferGeometry.prototype.copy.call(trunkGeometry, _trunkMesh.geometry);
-            const branchMesh = new THREE.InstancedMesh(branchGeometry, _branchMesh.material, treePositions.length);
-            const trunkMesh = new THREE.InstancedMesh(trunkGeometry, _trunkMesh.material, treePositions.length);
-            branchMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-            trunkMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-            const dummy = new THREE.Object3D();
-            for (let i = 0; i < treePositions.length; ++i) {
-                dummy.position.set(treePositions[i].x, treePositions[i].y, treePositions[i].z)
-                dummy.updateMatrix();
-                branchMesh.setMatrixAt(i, dummy.matrix);
-                trunkMesh.setMatrixAt(i, dummy.matrix);
+            addMesh('pPlane145_Branch_0');
+            addMesh('pPlane145_lambert5_0');
+
+            function addMesh(meshName) {
+                const _mesh = model.getObjectByName(meshName);
+                const meshGeometry = new THREE.InstancedBufferGeometry();
+                THREE.BufferGeometry.prototype.copy.call(meshGeometry, _mesh.geometry);
+                const mesh = new THREE.InstancedMesh(meshGeometry, _mesh.material, treePositions.length);
+                mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+                const dummy = new THREE.Object3D();
+                for (let i = 0; i < treePositions.length; ++i) {
+                    dummy.position.set(treePositions[i].x, treePositions[i].y, treePositions[i].z)
+                    dummy.updateMatrix();
+                    mesh.setMatrixAt(i, dummy.matrix);
+                }
+                mesh.traverse(function (object) {
+                    if (!object.isMesh)
+                        return;
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                });
+                scene.add(mesh);
             }
-            branchMesh.traverse(function (object) {
-                if (!object.isMesh)
-                    return;
-                object.castShadow = true;
-                object.receiveShadow = true;
-            });
-            trunkMesh.traverse(function (object) {
-                if (!object.isMesh)
-                    return;
-                object.castShadow = true;
-                object.receiveShadow = true;
-            });
-            scene.add(branchMesh);
-            scene.add(trunkMesh);
 
             render();
 
