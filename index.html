@@ -60,7 +60,9 @@
         const particles = getParticles();
         scene.add(particles);
 
-        loadTreeAndStartRender(render, scene);
+        loadModelsAndStartRender(scene, render);
+
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);
 
         function render() {
             requestAnimationFrame(render);
@@ -80,8 +82,6 @@
             moonHemiLight.position.set(sunCoords.z, -sunCoords.y, sunCoords.x);
             moon.position.set(sunCoords.z, -sunCoords.y, sunCoords.x);
         }
-
-        var controls = new THREE.OrbitControls(camera, renderer.domElement);
     }
 
     function getCamera() {
@@ -149,7 +149,7 @@
         return ground;
     }
 
-    function loadTreeAndStartRender(render, scene) {
+    function loadModelsAndStartRender(scene, render) {
         const treePositions = [
             new THREE.Vector3(0, -22.7, 0),
             new THREE.Vector3(0, -22.7, 220),
@@ -167,6 +167,8 @@
 
             addMesh('pPlane145_Branch_0');
             addMesh('pPlane145_lambert5_0');
+
+            loadHouse(scene, render);
 
             function addMesh(meshName) {
                 const _mesh = model.getObjectByName(meshName);
@@ -188,6 +190,26 @@
                 });
                 scene.add(mesh);
             }
+
+        });
+    }
+
+    function loadHouse(scene, render) {
+
+        const loader = new THREE.GLTFLoader();
+        loader.load('models/house/scene.gltf', function (gltf) {
+
+            const model = gltf.scene;
+            model.position.set(200, -23, 0);
+            model.scale.set(.05,.05,.05);
+            scene.add(model);
+
+            model.traverse(function (object) {
+                if (!object.isMesh)
+                    return;
+                object.castShadow = true;
+                object.receiveShadow = true;
+            });
 
             render();
 
