@@ -150,28 +150,52 @@
     }
 
     function loadTreeAndStartRender(render, scene) {
+        const treePositions = [
+            new THREE.Vector3(0, -22.7, 0),
+            new THREE.Vector3(0, -22.7, 220),
+            new THREE.Vector3(120, -22.7, 250),
+            new THREE.Vector3(320, -22.7, 270),
+            new THREE.Vector3(180, -22.7, 350),
+            new THREE.Vector3(400, -22.7, 0),
+            new THREE.Vector3(230, -22.7, 250),
+        ]
+
         const loader = new THREE.GLTFLoader();
         loader.load('models/fur_tree/scene.gltf', function (gltf) {
 
             let model = gltf.scene;
 
-            model.castShadow = true;
-            model.receiveShadow = true;
-            model.traverse(function (object) {
+            const _branchMesh = model.getObjectByName('pPlane145_Branch_0');
+            const _trunkMesh = model.getObjectByName('pPlane145_lambert5_0');
+            const branchGeometry = new THREE.InstancedBufferGeometry();
+            const trunkGeometry = new THREE.InstancedBufferGeometry();
+            THREE.BufferGeometry.prototype.copy.call(branchGeometry, _branchMesh.geometry);
+            THREE.BufferGeometry.prototype.copy.call(trunkGeometry, _trunkMesh.geometry);
+            const branchMesh = new THREE.InstancedMesh(branchGeometry, _branchMesh.material, treePositions.length);
+            const trunkMesh = new THREE.InstancedMesh(trunkGeometry, _trunkMesh.material, treePositions.length);
+            branchMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            trunkMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            const dummy = new THREE.Object3D();
+            for (let i = 0; i < treePositions.length; ++i) {
+                dummy.position.set(treePositions[i].x, treePositions[i].y, treePositions[i].z)
+                dummy.updateMatrix();
+                branchMesh.setMatrixAt(i, dummy.matrix);
+                trunkMesh.setMatrixAt(i, dummy.matrix);
+            }
+            branchMesh.traverse(function (object) {
+                if (!object.isMesh)
+                    return;
                 object.castShadow = true;
                 object.receiveShadow = true;
             });
-
-            scene.add(model);
-            model = model.clone();
-            model.position.z += 250;
-            scene.add(model);
-            model = model.clone();
-            model.position.x += 140;
-            scene.add(model);
-            model = model.clone();
-            model.position.z -= 180;
-            scene.add(model);
+            trunkMesh.traverse(function (object) {
+                if (!object.isMesh)
+                    return;
+                object.castShadow = true;
+                object.receiveShadow = true;
+            });
+            scene.add(branchMesh);
+            scene.add(trunkMesh);
 
             render();
 
