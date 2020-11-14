@@ -30,11 +30,26 @@
             width: 100%;
             height: 100%;
             background: black;
-            color: white;
+            animation: anime infinite 1s linear;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: xx-large;
+        }
+
+        @keyframes anime {
+            0% {
+                color: white;
+            }
+            33% {
+                color: green;
+            }
+            66% {
+                color: white;
+            }
+            100% {
+                color: red;
+            }
         }
     </style>
 </head>
@@ -45,21 +60,6 @@
 <script src="js/GLTFLoader.js"></script>
 <script src="js/OrbitControls.js"></script>
 <script>
-
-    (function loading() {
-        let counter = 0;
-        const loadState = ['', '.', '..', '...'];
-        const loader = document.getElementById("loader");
-        setInterval(change, 300);
-
-        function change() {
-            loader.innerHTML = 'Loading' + loadState[counter];
-            counter++;
-            if (counter >= loadState.length) {
-                counter = 0;
-            }
-        }
-    })();
 
     init();
 
